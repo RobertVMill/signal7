@@ -1,7 +1,10 @@
+import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict
 from app.services.research_agent import ResearchAgent
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -14,6 +17,7 @@ class CompanyAnalysisRequest(BaseModel):
 @router.post("/research")
 async def perform_research(request: ResearchRequest):
     try:
+        logger.info(f"Starting research for query: {request.query}")
         agent = ResearchAgent()
         
         # Initialize response with progress steps
@@ -53,10 +57,10 @@ async def perform_research(request: ResearchRequest):
         
         return result
     except Exception as e:
-        print(f"Error in research endpoint: {str(e)}")
+        logger.error(f"Research failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"An error occurred while processing your request: {str(e)}"
+            detail={"error": str(e), "message": "Failed to perform research"}
         )
 
 @router.post("/analyze/{ticker}")
@@ -67,7 +71,8 @@ async def analyze_company(ticker: str) -> Dict:
         result = await agent.analyze_company(ticker)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to analyze company: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail={"error": str(e), "message": "Failed to analyze company"})
 
 @router.get("/test-openai")
 async def test_openai():
@@ -82,6 +87,7 @@ async def test_openai():
             "test_response": test_result
         }
     except Exception as e:
+        logger.error(f"OpenAI API test failed: {str(e)}", exc_info=True)
         return {
             "status": "error",
             "message": f"OpenAI API error: {str(e)}"
@@ -99,7 +105,12 @@ async def test_newsapi():
             "articles": articles
         }
     except Exception as e:
+        logger.error(f"NewsAPI test failed: {str(e)}", exc_info=True)
         return {
             "status": "error",
             "message": f"NewsAPI error: {str(e)}"
         }
+
+@router.get("/test")
+async def test_endpoint():
+    return {"status": "API is working"}
