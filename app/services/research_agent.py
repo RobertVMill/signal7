@@ -4,7 +4,6 @@ import logging
 from typing import Dict, List
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from sentence_transformers import SentenceTransformer
 from .ai_client import AIClient
 
 load_dotenv()
@@ -15,12 +14,8 @@ class ResearchAgent:
         if not self.news_api_key:
             logging.warning("NEWS_API_KEY not found in environment variables")
             self.news_api_key = "dummy_key"  # Fallback for initial page load
-        try:
-            # Load a smaller, faster model
-            self.embedding_model = SentenceTransformer('paraphrase-MiniLM-L3-v2')
-        except Exception as e:
-            logging.error(f"Error loading embedding model: {e}")
-            self.embedding_model = None
+        
+        self.embedding_model = None  # We'll implement this later
         self.ai_client = AIClient()
         self.companies = {
             'apple': ['Apple', 'AAPL'],
