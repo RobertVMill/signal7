@@ -13,9 +13,14 @@ class ResearchAgent:
     def __init__(self):
         self.news_api_key = os.getenv('NEWS_API_KEY')
         if not self.news_api_key:
-            raise ValueError("NEWS_API_KEY not found in environment variables")
-        # Load a smaller, faster model
-        self.embedding_model = SentenceTransformer('paraphrase-MiniLM-L3-v2')
+            logging.warning("NEWS_API_KEY not found in environment variables")
+            self.news_api_key = "dummy_key"  # Fallback for initial page load
+        try:
+            # Load a smaller, faster model
+            self.embedding_model = SentenceTransformer('paraphrase-MiniLM-L3-v2')
+        except Exception as e:
+            logging.error(f"Error loading embedding model: {e}")
+            self.embedding_model = None
         self.ai_client = AIClient()
         self.companies = {
             'apple': ['Apple', 'AAPL'],
