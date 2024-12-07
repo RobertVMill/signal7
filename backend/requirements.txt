@@ -1,0 +1,11 @@
+flask==2.3.3
+flask-cors==4.0.0
+requests==2.31.0
+python-dotenv==1.0.0
+newsapi-python==0.2.7
+langchain-openai==0.2.10
+langchain-core==0.3.21
+openai>=1.54.0
+yfinance==0.2.31  # For getting stock market data
+sec-api==1.0.17  # For SEC filings data
+gunicorn==21.2.0  # For production deployment

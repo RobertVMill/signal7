@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: signal7-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    repo: https://github.com/YOUR_USERNAME/Signal7.git # Update this with your repo
+    branch: main
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: NEWS_API_KEY
+        sync: false # Will be set manually in Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SEC_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://signal7.vercel.app # Update this with your Vercel domain
