@@ -53,7 +53,10 @@ def get_companies():
 
 @app.route('/api/news/<company>', methods=['GET'])
 def get_company_news(company):
+    logger.info(f"Received news request for {company}")
+    
     if company not in COMPANIES:
+        logger.error(f"Company not found: {company}")
         return jsonify({'error': 'Company not found'}), 404
     
     try:
@@ -63,8 +66,10 @@ def get_company_news(company):
             sort_by='publishedAt',
             page_size=5
         )
+        logger.info(f"Successfully fetched news for {company}")
         return jsonify(news)
     except Exception as e:
+        logger.error(f"Error fetching news: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/analysis/<company>', methods=['GET'])
@@ -108,15 +113,20 @@ def get_market_analysis(company):
 
 @app.route('/api/ask/<company>', methods=['POST'])
 def ask_question(company):
+    logger.info(f"Received question for {company}")
+    
     if company not in COMPANIES:
+        logger.error(f"Company not found: {company}")
         return jsonify({'error': 'Company not found'}), 404
     
     try:
         # Get the question from the request body
         data = request.get_json()
         if not data or 'question' not in data:
+            logger.error("No question provided")
             return jsonify({'error': 'No question provided'}), 400
             
+        logger.info(f"Fetching news for {company}")
         # Get news first
         news = newsapi.get_everything(
             q=COMPANIES[company],
@@ -125,69 +135,61 @@ def ask_question(company):
             page_size=5
         )
         
-        # Get analysis for the specific question
-        response = market_analyst.ask_financial_question(
+        logger.info("Asking AI the question")
+        # Ask the question
+        answer = market_analyst.ask_financial_question(
             company_name=COMPANIES[company],
             symbol=company,
             question=data['question'],
             news_articles=news['articles']
         )
         
-        return jsonify(response)
+        logger.info("Question answered successfully")
+        return jsonify(answer)
     except Exception as e:
+        logger.error(f"Error processing question: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/research/<company>', methods=['GET'])
 def get_company_research(company):
+    logger.info(f"Received research request for {company}")
+    
     if company not in COMPANIES:
+        logger.error(f"Company not found: {company}")
         return jsonify({'error': 'Company not found'}), 404
     
     try:
-        research = company_research.get_company_research(
-            symbol=company,
-            company_name=COMPANIES[company]
-        )
+        research = company_research.get_company_research(company, COMPANIES[company])
+        logger.info("Research completed successfully")
         return jsonify(research)
     except Exception as e:
+        logger.error(f"Error getting research: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/search-filings', methods=['POST'])
-@cross_origin()
+@app.route('/api/search', methods=['GET'])
 def search_filings():
+    logger.info("Received filings search request")
     try:
-        data = request.get_json()
-        query = data.get('query')
-        if not query:
-            return jsonify({
-                'success': False,
-                'error': 'Search query is required'
-            }), 400
-
-        # Get optional parameters
-        company_symbol = data.get('company_symbol')
-        form_types = data.get('form_types')
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
-        page = data.get('page', '1')
-
-        # Perform the search
+        query = request.args.get('q', '')
+        form_types = request.args.getlist('form_type')
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
+        page = request.args.get('page', '1')
+        
+        logger.info(f"Searching filings with query: {query}, form_types: {form_types}")
         results = company_research.search_filings(
             query=query,
-            company_symbol=company_symbol,
             form_types=form_types,
             start_date=start_date,
             end_date=end_date,
             page=page
         )
-
+        
+        logger.info("Search completed successfully")
         return jsonify(results)
-
     except Exception as e:
-        app.logger.error(f"Error in search-filings endpoint: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        logger.error(f"Error searching filings: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
